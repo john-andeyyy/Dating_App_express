@@ -147,9 +147,9 @@ exports.list = async (req, res) => {
         const excludeIds = [userId, ...interactedUsers].map(id => new mongoose.Types.ObjectId(id));
 
         const users = await User.aggregate([
-            { $match: { _id: { $nin: excludeIds }, Phonenumber: { $exists: true, $ne: "" } } },
+            { $match: { _id: { $nin: excludeIds }} },
             { $project: { Password: 0 } },
-            // { $sample: { size: 10 } }
+            { $sample: { size: 10 } }
         ]);
 
         if (!users.length) {

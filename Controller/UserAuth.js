@@ -37,12 +37,25 @@ exports.update = async (req, res) => {
 exports.Signup = async (req, res) => {
     try {
         const { Username, Password, Phonenumber, Birthday, bio, Name } = req.body;
+        console.log(req.body);
+        
         const imgFile = req.file;
         
-        const existingEmail = await User.findOne({ Email: Username });
-        if (existingEmail) {
-            return res.status(400).json({ message: "Email already exists!" });
+
+        let existingEmail
+        if (Username) {
+            existingEmail = await User.findOne({ Email: Username });
+            if (existingEmail) {
+                return res.status(400).json({ message: "Email already exists!" });
+            }
+        } else {
+            existingEmail = await User.findOne({ Phonenumber: Phonenumber });
+            if (existingEmail) {
+                return res.status(400).json({ message: "Phone Number already exists!" });
+            }
         }
+
+       
 
         // Check if phone number already exists (if provided)
         if (Phonenumber) {
@@ -83,9 +96,17 @@ exports.Login = async (req, res) => {
 
 
     try {
-        let UserData = await User.findOne({
-            $or: [{ Email: Username }]
-        });
+        let UserData
+        if (Username){
+
+            UserData = await User.findOne({
+                $or: [{ Email: Username }]
+            });
+        }else{
+            UserData = await User.findOne({
+                $or: [{ Phonenumber: Username }]
+            });
+        }
 
         if (!UserData)
             return res.status(400).json({ message: "user Not found!" });

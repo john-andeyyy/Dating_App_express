@@ -5,6 +5,8 @@ const AuthChecker = require('../Middleware/IsAuthorize')
 
 
 Router.post("/Send", AuthChecker.isexisting, Msg.Send);
-Router.get("/MessageList/:userId/:matchUserId", AuthChecker.isexisting, Msg.GetConvoMessage);
+Router.get("/MessageList/:senderId/:receiverId", AuthChecker.isexisting, Msg.GetConvoMessage);
+Router.get("/MatchedListMsg/:Userid", AuthChecker.isexisting, Msg.MatchedListMsg);
+
 
 module.exports = Router; 

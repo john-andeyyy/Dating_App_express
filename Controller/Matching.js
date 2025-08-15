@@ -32,7 +32,11 @@ exports.Swipe_Left_or_Right = async (req, res) => {
 }
 
 exports.Like_unlike = async (req, res) => {
+    console.log("Like_unlike");
+    
     const { Userid, MatchingId, isLike } = req.body;
+    // console.log(req.body);
+    
 
     try {
         let record = await IsMatched.findOne({ userId: Userid, userSuggestion: MatchingId });
@@ -84,11 +88,15 @@ exports.unMatch = async (req, res) => {
         if (!unlike)
             return res.status(404).json({ message: "User not found" });
 
-        console.log(unlike);
+        // console.log(unlike);
 
         const isokay = await IsMatched.deleteOne({
             userId: Userid,
             userSuggestion: MatchingId
+        });
+        await IsMatched.deleteOne({
+            userId: MatchingId,
+            userSuggestion: Userid
         });
 
         if (isokay)
@@ -127,34 +135,30 @@ exports.MatchedList = async (req, res) => {
     }
 }; 
 
+const mongoose = require('mongoose');
+
 exports.list = async (req, res) => {
+    console.log("list");
+    
     const { userId } = req.params;
 
     try {
-        const interactedUsers = await IsMatched
-            .find({ userId }) 
-            .distinct('userSuggestion');
+        const interactedUsers = await IsMatched.find({ userId }).distinct('userSuggestion');
+        const excludeIds = [userId, ...interactedUsers].map(id => new mongoose.Types.ObjectId(id));
 
-        const excludeIds = [userId, ...interactedUsers];
+        const users = await User.aggregate([
+            { $match: { _id: { $nin: excludeIds }, Phonenumber: { $exists: true, $ne: "" } } },
+            { $project: { Password: 0 } },
+            // { $sample: { size: 10 } }
+        ]);
 
-        // Get all users that are not excluded
-        const availableUsers = await User
-            .find({
-                _id: { $nin: excludeIds }
-            })
-            .select('-Password');
-
-        if (availableUsers.length === 0) {
+        if (!users.length) {
             return res.status(404).json({ message: "No available matches" });
         }
 
-        res.status(200).json({
-            message: "Successfully retrieved matches",
-            data: availableUsers
-        });
-
+        res.status(200).json({ message: "Successfully retrieved random matches", data: users });
     } catch (error) {
         console.error(`Error fetching matches: ${error.message}`);
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ message: "Server error" });
     }
 };

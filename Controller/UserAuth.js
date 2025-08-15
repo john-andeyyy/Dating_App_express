@@ -34,24 +34,20 @@ exports.update = async (req, res) => {
         console.error(`Error: ${error.message}`);
     }
 }
-
 exports.Signup = async (req, res) => {
     try {
         const { Username, Password, Phonenumber, Birthday, bio, Name } = req.body;
-        const imgFile = req.file;        
+        const imgFile = req.file;
+        
+        const existingEmail = await User.findOne({ Email: Username });
+        if (existingEmail) {
+            return res.status(400).json({ message: "Email already exists!" });
+        }
 
-        let isExistingUser = await User.findOne({
-            $or: [
-                { Username },
-                { Phonenumber },
-            ]
-        });
-
-        if (isExistingUser) {
-            if (isExistingUser.Username === Username) {
-                return res.status(400).json({ message: "Username already exists!" });
-            }
-            if (Phonenumber && isExistingUser.Phonenumber === Phonenumber) {
+        // Check if phone number already exists (if provided)
+        if (Phonenumber) {
+            const existingPhone = await User.findOne({ Phonenumber });
+            if (existingPhone) {
                 return res.status(400).json({ message: "Phone number already exists!" });
             }
         }
@@ -66,6 +62,7 @@ exports.Signup = async (req, res) => {
             bio: bio || "",
             Name
         });
+
         if (imgFile) {
             newUser.Image = imgFile.buffer;
         }
@@ -79,10 +76,10 @@ exports.Signup = async (req, res) => {
     }
 };
 
+
 exports.Login = async (req, res) => {
     console.log('admin Login');
     const { Username, Password } = req.body;
-    console.log(req.body);
 
 
     try {

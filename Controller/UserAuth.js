@@ -91,25 +91,21 @@ exports.Signup = async (req, res) => {
 
 
 exports.Login = async (req, res) => {
-    console.log('admin Login');
+    console.log('Login');
     const { Username, Password } = req.body;
 
+    
 
     try {
-        let UserData
-        if (Username){
-
-            UserData = await User.findOne({
-                $or: [{ Email: Username }]
-            });
-        }else{
-            UserData = await User.findOne({
-                $or: [{ Phonenumber: Username }]
-            });
-        }
+        let UserData = await User.findOne({
+            $or: [
+                { Email: Username },
+                { Phonenumber: Username }
+            ]
+        });
 
         if (!UserData)
-            return res.status(400).json({ message: "user Not found!" });
+            return res.status(400).json({ message: "User Not found!" });
 
         const Ismatched = await bcrypt.compare(Password, UserData.Password);
         if (!Ismatched) {

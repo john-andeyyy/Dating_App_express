@@ -2,45 +2,57 @@ const User = require('../Model/UserSchema');
 const Message = require('../Model/MessageSchema');
 const mongoose = require('mongoose');
 const IsMatched = require('../Model/IsMatchSchema');
+const { SocketNotification } = require('../Utils/Notifications')
 
 
 exports.Send = async (req, res) => {
-    
     try {
         const { senderId, receiverId, message } = req.body;
-        
+
 
         if (!senderId || !receiverId || !message) {
             return res.status(400).json({ message: "All fields are required" });
         }
-
 
         const receiverExists = await User.findById(receiverId);
         if (!receiverExists) {
             return res.status(404).json({ message: "Receiver not found" });
         }
 
-        const newMessage = await Message.create({
-            senderId: senderId,
-            receiverId: receiverId,
-            message
+        const newMessage = await Message.create({ senderId, receiverId, message });
+
+        // Emit to socket room
+        const room = [senderId, receiverId].sort().join("_");
+        req.io.to(room).emit("receive_message", {
+            senderId,
+            receiverId,
+            message,
+            createdAt: newMessage.createdAt
         });
-       
+
+        SocketNotification(receiverId.toString(), `New Message from ${receiverExists.Name}`)
+        // req.io.to(receiverId.toString()).emit("New_Notif", {
+        //     message: `New Message from ${receiverExists.Name}`,
+        //     senderId,
+        //     receiverId
+        // });
+
+
         return res.status(200).json({
             message: "Message sent successfully",
             data: newMessage
         });
-
     } catch (error) {
         console.error(`Error sending message: ${error.message}`);
         return res.status(500).json({ message: error.message });
     }
 };
 
+
 exports.GetConvoMessage = async (req, res) => {
     try {
 
-       
+
         // const { userId, matchUserId } = req.params;
         const { senderId, receiverId } = req.params;
 
@@ -54,25 +66,25 @@ exports.GetConvoMessage = async (req, res) => {
                 { senderId: receiverId, receiverId: senderId }
             ]
         })
-            .sort({ createdAt: 1 }) 
-            .populate('senderId', 'Email Name')
-            .populate('receiverId', 'Email Name')
+            .sort({ createdAt: 1 })
+            .populate('senderId', 'Email Name _id')
+            .populate('receiverId', 'Email Name _id')
             .lean();
 
         if (!messages.length) {
             return res.status(404).json({ message: "No messages found" });
         }
 
-       
+
 
         const formattedMessages = messages
-            .filter(msg => msg.senderId && msg.receiverId) 
+            .filter(msg => msg.senderId && msg.receiverId)
             .map(msg => ({
                 _id: msg._id,
-                sender: msg.senderId?.Email || "Unknown Sender",
+                senderID: msg.senderId._id || "Unknown Sender",
                 senderName: msg.senderId?.Name || "Unknown Sender",
                 receiverName: msg.receiverId?.Name || "Unknown Receiver",
-                receiver: msg.receiverId?.Email || "Unknown Receiver",
+                receiverID: msg.receiverId?._id || "Unknown Receiver",
                 message: msg.message,
                 date: new Date(msg.createdAt).toLocaleDateString('en-PH', {
                     year: 'numeric',
@@ -109,8 +121,8 @@ exports.MatchedListMsg = async (req, res) => {
 
     console.log(userObjectId);
     console.log(Userid);
-    
-    
+
+
     try {
         const matches = await IsMatched.find({
             userId: Userid.toString(),

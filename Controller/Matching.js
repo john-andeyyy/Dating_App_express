@@ -1,5 +1,6 @@
 const IsMatched = require('../Model/IsMatchSchema');
 const User = require('../Model/UserSchema')
+const { SocketNotification } = require('../Utils/Notifications')
 
 exports.Swipe_Left_or_Right = async (req, res) => {
 
@@ -66,6 +67,7 @@ exports.Like_unlike = async (req, res) => {
                 reverseRecord.isMatch = true;
                 await record.save();
                 await reverseRecord.save();
+                SocketNotification(MatchingId,`New Match`)
             }
         }
 
@@ -153,6 +155,8 @@ exports.list = async (req, res) => {
         ]);
 
         if (!users.length) {
+            console.log("No available matches");
+            
             return res.status(404).json({ message: "No available matches" });
         }
 

@@ -20,8 +20,11 @@ const io = new Server(server, {
     }
 });
 
-const { init } = require("./Utils/Notifications");
-init(io);
+// const { init } = require("./Utils/Notifications");
+// init(io)
+module.exports.io = io;
+
+
 
 
 app.use((req, res, next) => {
@@ -41,18 +44,18 @@ const Matching = require('./Routes/Matching');
 app.use('/Matching', Matching);
 
 io.on("connection", (socket) => {
-    console.log("⚡ User connected:", socket.id);
+    // console.log("⚡ User connected:", socket.id);
 
     socket.on("join", (userId) => {
         if (!userId) return;
         socket.join(userId.toString());
-        console.log(` User ${userId} joined personal notif room`);
+        // console.log(` User ${userId} joined personal notif room`);
     });
 
     socket.on("join_convo", ({ senderId, receiverId }) => {
         const room = [senderId, receiverId].sort().join("_");
         socket.join(room);
-        console.log(` ${senderId} joined convo room: ${room}`);
+        // console.log(` ${senderId} joined convo room: ${room}`);
     });
 
     socket.on("send_message", ({ senderId, receiverId, message }) => {

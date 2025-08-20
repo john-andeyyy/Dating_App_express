@@ -1,8 +1,4 @@
-let io;
-
-exports.init = (socketIo) => {
-    io = socketIo;
-};
+const { io } = require("../server");
 
 exports.SocketNotification = (receiverId, message, senderId) => {
     if (!io) return console.error("❌ Socket.io not initialized");

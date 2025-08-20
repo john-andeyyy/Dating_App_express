@@ -1,6 +1,7 @@
 const IsMatched = require('../Model/IsMatchSchema');
 const User = require('../Model/UserSchema')
 const { SocketNotification } = require('../Utils/Notifications')
+const { SOCKET_SendNewData_NewMatch } = require('../Utils/SocketNewData')
 
 exports.Swipe_Left_or_Right = async (req, res) => {
 
@@ -68,6 +69,8 @@ exports.Like_unlike = async (req, res) => {
                 await record.save();
                 await reverseRecord.save();
                 SocketNotification(MatchingId,`New Match`)
+                SOCKET_SendNewData_NewMatch(Userid, MatchingId,)
+
             }
         }
 

@@ -1,23 +1,25 @@
-const User = require('../Model/UserSchema')
+const jwt = require('jsonwebtoken')
+const JWT_SECRET = process.env.JWT_SECRET;
 
-exports.isexisting = async (req, res, next) => {
+exports.verifyToken = async (req, res, next) => {
     try {
-        // const { Email, Phonenumber, Id, UserId_Auth } = req.body; 
+        const authHeader = req.headers["authorization"];
+        const token = authHeader && authHeader.split(" ")[1];
+        if (!token) {
+            console.log("missing ");
+            
+            return res.status(401).json({ error: "Access token required" });
+        }
 
-        // const existingUser = await User.findOne({
-        //     $or: [
-        //         { Email },
-        //         { Phonenumber },
-        //         { _id: Id },
-        //         { _id: UserId_Auth }
-        //     ]
-        // });
+        jwt.verify(token, JWT_SECRET, (err, decoded) => {
+            if (err) {
+                return res.status(403).json({ error: "Invalid or expired access token" });
+            }
 
-        // if (existingUser) {
-        //     return res.status(400).json({ message: "User already exists" });
-        // }
+            req.user = decoded;
+            next();
+        });
 
-        next();
     } catch (error) {
         res.status(400).json({ message: error.message });
         console.error(`Error: ${error.message}`);

@@ -4,10 +4,10 @@ const Matching = require('../Controller/Matching')
 const AuthChecker = require('../Middleware/IsAuthorize')
 
 
-Router.get("/MatchedList/:Userid", AuthChecker.isexisting, Matching.MatchedList);
-Router.post("/Swipe_Left_or_Right", AuthChecker.isexisting, Matching.Swipe_Left_or_Right); // not in use
-Router.post("/Like_unlike", AuthChecker.isexisting, Matching.Like_unlike);
-Router.put("/unMatch", AuthChecker.isexisting, Matching.unMatch);
-Router.get("/PeopleList/:userId", AuthChecker.isexisting, Matching.list); // random
+Router.get("/MatchedList/:Userid", AuthChecker.verifyToken, Matching.MatchedList);
+Router.post("/Swipe_Left_or_Right", AuthChecker.verifyToken, Matching.Swipe_Left_or_Right); // not in use
+Router.post("/Like_unlike", AuthChecker.verifyToken, Matching.Like_unlike);
+Router.put("/unMatch", AuthChecker.verifyToken, Matching.unMatch);
+Router.get("/PeopleList/:userId", AuthChecker.verifyToken, Matching.list); // random
 
 module.exports = Router; 

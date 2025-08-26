@@ -35,10 +35,10 @@ exports.Swipe_Left_or_Right = async (req, res) => {
 
 exports.Like_unlike = async (req, res) => {
     console.log("Like_unlike");
-    
+
     const { Userid, MatchingId, isLike } = req.body;
     // console.log(req.body);
-    
+
 
     try {
         let record = await IsMatched.findOne({ userId: Userid, userSuggestion: MatchingId });
@@ -68,7 +68,7 @@ exports.Like_unlike = async (req, res) => {
                 reverseRecord.isMatch = true;
                 await record.save();
                 await reverseRecord.save();
-                SocketNotification(MatchingId,`New Match`)
+                SocketNotification(MatchingId, `New Match`)
                 SOCKET_SendNewData_NewMatch(Userid, MatchingId,)
 
             }
@@ -123,10 +123,13 @@ exports.MatchedList = async (req, res) => {
             userId: Userid,
             isMatch: true
         })
-            .populate('userSuggestion','-password');
+            .populate('userSuggestion', '-password');
 
         if (!list || list.length === 0) {
-            return res.status(404).json({ message: "No matches found" });
+            return res.status(200).json({
+                message: "No matches found",
+                data: []
+            });
         }
 
         return res.status(200).json({
@@ -138,13 +141,13 @@ exports.MatchedList = async (req, res) => {
         console.error(`Error: ${error.message}`);
         res.status(400).json({ message: error.message });
     }
-}; 
+};
 
 const mongoose = require('mongoose');
 
 exports.list = async (req, res) => {
     console.log("list");
-    
+
     const { userId } = req.params;
 
     try {
@@ -152,15 +155,15 @@ exports.list = async (req, res) => {
         const excludeIds = [userId, ...interactedUsers].map(id => new mongoose.Types.ObjectId(id));
 
         const users = await User.aggregate([
-            { $match: { _id: { $nin: excludeIds }} },
+            { $match: { _id: { $nin: excludeIds } } },
             { $project: { Password: 0 } },
             { $sample: { size: 10 } }
         ]);
 
         if (!users.length) {
             console.log("No available matches");
-            
-            return res.status(404).json({ message: "No available matches" });
+
+            return res.status(204).json({ message: "No available matches" });
         }
 
         res.status(200).json({ message: "Successfully retrieved random matches", data: users });

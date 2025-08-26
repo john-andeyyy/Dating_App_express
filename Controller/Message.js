@@ -51,9 +51,6 @@ exports.Send = async (req, res) => {
 
 exports.GetConvoMessage = async (req, res) => {
     try {
-
-
-        // const { userId, matchUserId } = req.params;
         const { senderId, receiverId } = req.params;
 
         if (!senderId || !receiverId) {
@@ -72,11 +69,9 @@ exports.GetConvoMessage = async (req, res) => {
             .lean();
 
         if (!messages.length) {
-            return res.status(404).json({ message: "No messages found" });
+            return res.status(204).json({ message: "No messages found" });
         }
-
-
-
+        
         const formattedMessages = messages
             .filter(msg => msg.senderId && msg.receiverId)
             .map(msg => ({
@@ -119,9 +114,6 @@ exports.MatchedListMsg = async (req, res) => {
     const { Userid } = req.params;
     const userObjectId = new mongoose.Types.ObjectId(Userid);
 
-    console.log(userObjectId);
-    console.log(Userid);
-
 
     try {
         const matches = await IsMatched.find({
@@ -130,7 +122,7 @@ exports.MatchedListMsg = async (req, res) => {
         }).populate("userSuggestion", "-Password");
 
         if (!matches || matches.length === 0) {
-            return res.status(404).json({ message: "No matched users found" });
+            return res.status(204).json({ message: "No matched users found" });
         }
         const matchedUsers = matches.map((m) => m.userSuggestion);
 

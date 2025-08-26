@@ -1,7 +1,7 @@
 const express = require('express');
 const Router = express.Router();
 const Matching = require('../Controller/Matching')
-const AuthChecker = require('../Middleware/IsAuthorize')
+const AuthChecker = require('../Middleware/verifyToken')
 
 
 Router.get("/MatchedList/:Userid", AuthChecker.verifyToken, Matching.MatchedList);

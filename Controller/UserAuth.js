@@ -1,6 +1,6 @@
 const User = require('../Model/UserSchema')
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_Refresh = process.env.JWT_Refresh;
 
@@ -77,8 +77,8 @@ exports.Login = async (req, res) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        const AccessToken = jwt.sign({ id: UserData._id }, JWT_SECRET, { expiresIn: "15m" });
-        const Refresh_Token = jwt.sign({ id: UserData._id }, JWT_Refresh, { expiresIn: '30d' });
+        const AccessToken = jwt.sign({ id: UserData._id }, JWT_SECRET, { expiresIn: "1m" });
+        const Refresh_Token = jwt.sign({ id: UserData._id }, JWT_Refresh, { expiresIn: '1d' });
 
 
         res.status(200).json({
@@ -96,11 +96,39 @@ exports.Login = async (req, res) => {
     }
 }
 
+exports.CheckToken = async (req, res) => {
+    console.warn("CheckToken");
+
+    try {
+        const authHeader = req.headers["authorization"];
+        const token = authHeader && authHeader.split(" ")[1];
+
+        if (!token) {
+            return res.status(401).json({ error: "Access token required" });
+        }
+
+        jwt.verify(token, JWT_SECRET, (err) => {
+            if (err) {
+                return res.status(401).json({ error: "Invalid or expired access token" });
+            }
+            console.log("valid");
+            
+            return res.status(200).json({ message: "Valid token" });
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+
 exports.RefreshToken = async (req, res) => {
+    console.warn("RefreshToken");
+
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-        return res.status(403).json({ error: "Refresh token invalid" });
+        return res.status(403).json({ error: "Refresh token required" });
     }
 
     jwt.verify(refreshToken, JWT_Refresh, (err, user) => {
@@ -112,9 +140,9 @@ exports.RefreshToken = async (req, res) => {
             { expiresIn: "15m" }
         );
 
-        res.status(200).json({ accessToken: newAccessToken });
+        return res.status(200).json({ accessToken: newAccessToken });
     });
-}
+};
 
 exports.RetrieveProfile = async (req, res) => {
     const { Userid } = req.params;

@@ -1,7 +1,7 @@
 const express = require('express');
 const Router = express.Router();
 const Msg = require('../Controller/Message')
-const AuthChecker = require('../Middleware/IsAuthorize')
+const AuthChecker = require('../Middleware/verifyToken')
 
 
 Router.post("/Send", AuthChecker.verifyToken, Msg.Send);

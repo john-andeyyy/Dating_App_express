@@ -146,29 +146,49 @@ exports.MatchedList = async (req, res) => {
 const mongoose = require('mongoose');
 
 exports.list = async (req, res) => {
-    console.log("list");
+    console.warn("list");
 
     const { userId } = req.params;
+    const minAge = req.query.minAge ? parseInt(req.query.minAge) : null;
+    const maxAge = req.query.maxAge ? parseInt(req.query.maxAge) : null;
 
     try {
         const interactedUsers = await IsMatched.find({ userId }).distinct('userSuggestion');
         const excludeIds = [userId, ...interactedUsers].map(id => new mongoose.Types.ObjectId(id));
 
-        const users = await User.aggregate([
-            { $match: { _id: { $nin: excludeIds } } },
-            { $project: { Password: 0 } },
-            { $sample: { size: 10 } }
-        ]);
+        const usersFromDb = await User.find({ _id: { $nin: excludeIds } }).select('-Password');
 
-        if (!users.length) {
+        function computeAge(birthdayStr) {
+            const birthday = new Date(birthdayStr);
+            let age = new Date().getFullYear() - birthday.getFullYear();
+
+            const thisYearBirthday = new Date(new Date().getFullYear(), birthday.getMonth(), birthday.getDate());
+            if (thisYearBirthday > new Date()) {
+                age--;
+            }
+
+            return age;
+        }
+
+        let filteredUsers = usersFromDb.map(user => ({ ...user.toObject(), age: computeAge(user.Birthday) }));
+
+        // Apply age filter only if minAge or maxAge is provided
+        if (minAge !== null) filteredUsers = filteredUsers.filter(user => user.age >= minAge);
+        if (maxAge !== null) filteredUsers = filteredUsers.filter(user => user.age <= maxAge);
+
+        const sample = filteredUsers.sort(() => 0.5 - Math.random()).slice(0, 10);
+
+        if (!sample.length) {
             console.log("No available matches");
-
             return res.status(204).json({ message: "No available matches" });
         }
 
-        res.status(200).json({ message: "Successfully retrieved random matches", data: users });
+        res.status(200).json({ message: "Successfully retrieved random matches", data: sample });
+
     } catch (error) {
         console.error(`Error fetching matches: ${error.message}`);
         res.status(500).json({ message: "Server error" });
     }
 };
+
+
